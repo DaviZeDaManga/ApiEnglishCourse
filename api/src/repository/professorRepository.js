@@ -13,3 +13,4 @@ export async function loginProfessor(email, senha) {
     WHERE ds_email = ?
     AND   ds_senha = ?;`
 }
+
