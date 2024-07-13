@@ -58,6 +58,7 @@ export async function dadosTrilhas(idsala, iduser) {
     tt.nm_nome AS nome, 
     tt.ds_descricao AS descricao, 
     tt.img_imagem AS imagem, 
+    tt.url_video AS video,
     tt.dt_criado AS criado
     FROM tb_trilhas tt
     INNER JOIN tb_trilhas_salas tts ON tt.id_trilha = tts.id_trilha
@@ -261,6 +262,7 @@ export async function dadosAvisos(idsala, iduser) {
     ta.nm_nome AS nome, 
     ta.ds_descricao AS descricao, 
     ta.img_imagem AS imagem, 
+    ta.url_video AS video,
     ta.dt_criado AS criado
     FROM tb_avisos ta
     INNER JOIN tb_avisos_salas tas ON ta.id_aviso = tas.id_aviso
@@ -318,6 +320,7 @@ export async function dadosTransmissoes(idsala, iduser) {
     tt.nm_nome AS nome, 
     tt.ds_descricao AS descricao, 
     tt.img_imagem AS imagem, 
+    tt.url_video AS video,
     tt.dt_criado AS criado
     FROM tb_transmissoes tt
     INNER JOIN tb_transmissoes_salas tts ON tt.id_transmissao = tts.id_transmissao
