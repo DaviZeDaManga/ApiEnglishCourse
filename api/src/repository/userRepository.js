@@ -114,7 +114,7 @@ export async function dadosAtividades(idsala, idtrilha, iduser) {
     ta.dt_criado AS criado,
     COALESCE(taf.bt_conteudo, false) AS conteudo,
     COALESCE(taf.bt_licoes, false) AS licoes,
-    COALESCE(taf.ds_status, "Nao feita.") AS status
+    COALESCE(taf.ds_status, "Não feita.") AS status
     FROM tb_atividades ta
     LEFT JOIN tb_alunos_feitos taf ON ta.id_atividade = taf.id_atividade
 
@@ -207,8 +207,12 @@ export async function dadosLicoes(idsala, idtrilha, idatividade, iduser) {
         tl.ds_descricao AS descricao, 
         tl.ds_pergunta AS pergunta,
         tl.ds_tipo AS tipo,
+        tar.id_alternativa AS alternativa,
+        tar.ds_escrita AS escrita,
+        tar.ds_nota AS nota,
         tl.dt_criado AS criado
     FROM tb_licoes tl
+    LEFT JOIN tb_alunos_respostas tar ON tl.id_licao = tar.id_licao
     INNER JOIN tb_licoes_atividades tla ON tl.id_licao = tla.id_licao
     INNER JOIN tb_atividades_trilhas tat ON tla.id_atividade = tat.id_atividade
     INNER JOIN tb_trilhas_salas tas ON tat.id_trilha = tas.id_trilha
@@ -220,34 +224,37 @@ export async function dadosLicoes(idsala, idtrilha, idatividade, iduser) {
 
     const comando2 = `
     SELECT 
-        id_alternativa AS id,
-        nm_nome AS nome, 
-        ds_descricao AS descricao, 
-        bt_correto AS correto
-    FROM tb_alternativas 
-    WHERE id_licao = ?`;
+        ta.id_alternativa AS id,
+        ta.nm_nome AS nome, 
+        ta.ds_descricao AS descricao,
+        ta.bt_correto AS correto,
+        tar.ds_nota AS nota
+    FROM tb_alternativas ta
+    LEFT JOIN tb_alunos_respostas tar ON ta.id_alternativa = tar.id_alternativa AND tar.id_licao = ?
+    WHERE ta.id_licao = ?`;
 
     try {
-        const resposta = [];
-        const [licoes] = await conx.query(comando, [idsala, idtrilha, idatividade, iduser, iduser]);
+    const resposta = [];
+    const [licoes] = await conx.query(comando, [idsala, idtrilha, idatividade, iduser, iduser]);
 
-        for (let i = 0; i < licoes.length; i++) {
-            const idLicao = licoes[i].id;
+    for (let i = 0; i < licoes.length; i++) {
+        const idLicao = licoes[i].id;
 
-            const [alternativas] = await conx.query(comando2, [idLicao]);
+        const [alternativas] = await conx.query(comando2, [idLicao, idLicao]);
 
-            resposta.push({
-                licao: licoes[i],
-                alternativas: alternativas
-            });
-        }
+        resposta.push({
+        licao: licoes[i],
+        alternativas: alternativas
+        });
+    }
 
-        return resposta;
+    return resposta;
     } catch (error) {
-        console.error('Erro ao executar consulta dos dados da atividade:', error);
-        throw error; 
+    console.error('Erro ao executar consulta dos dados da atividade:', error);
+    throw error; 
     }
 }
+  
 
 
 
