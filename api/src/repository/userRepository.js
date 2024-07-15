@@ -11,8 +11,9 @@ export async function dadosSalas(iduser) {
     ts.img_imagem AS imagem, 
     ts.dt_criado AS criado
     FROM tb_salas ts
-    INNER JOIN tb_salas_alunos tsa ON ts.id_sala = tsa.id_sala
-    WHERE (tsa.id_aluno = ? OR ts.id_professor = ?)`
+    LEFT JOIN tb_salas_alunos tsa ON ts.id_sala = tsa.id_sala
+    WHERE ts.id_professor = ?
+    OR tsa.id_aluno = ?;`
 
     try {
         const [linhas] = await conx.query(comando, [iduser, iduser]);
@@ -34,8 +35,9 @@ export async function dadosSala(idsala, iduser) {
     ts.img_imagem AS imagem, 
     ts.dt_criado AS criado
     FROM tb_salas ts
-    INNER JOIN tb_salas_alunos tsa ON ts.id_sala = tsa.id_sala
-    WHERE tsa.id_sala = ? AND (tsa.id_aluno = ? OR ts.id_professor = ?)`
+    LEFT JOIN tb_salas_alunos tsa ON ts.id_sala = tsa.id_sala
+    WHERE ts.id_sala = ? 
+    AND (tsa.id_aluno = ? OR ts.id_professor = ?)`
 
     try {
         const [linhas] = await conx.query(comando, [idsala, iduser, iduser]);
@@ -62,7 +64,7 @@ export async function dadosTrilhas(idsala, iduser) {
     tt.dt_criado AS criado
     FROM tb_trilhas tt
     INNER JOIN tb_trilhas_salas tts ON tt.id_trilha = tts.id_trilha
-    INNER JOIN tb_salas_alunos tsa ON tts.id_sala = tsa.id_sala
+    LEFT JOIN tb_salas_alunos tsa ON tts.id_sala = tsa.id_sala
     WHERE tts.id_sala = ? 
     AND (tsa.id_aluno = ? OR tts.id_professor = ?);`
 
