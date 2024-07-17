@@ -1,7 +1,7 @@
 import { conx } from "./connection.js";
 
 //dados SALAS
-export async function dadosSalas(iduser) {
+export async function dadosSalas() {
     const comando = `
     SELECT 
     ts.id_sala AS id,
@@ -10,13 +10,10 @@ export async function dadosSalas(iduser) {
     ts.ds_descricao AS descricao, 
     ts.img_imagem AS imagem, 
     ts.dt_criado AS criado
-    FROM tb_salas ts
-    LEFT JOIN tb_salas_alunos tsa ON ts.id_sala = tsa.id_sala
-    WHERE ts.id_professor = ?
-    OR tsa.id_aluno = ?;`
+    FROM tb_salas ts`
 
     try {
-        const [linhas] = await conx.query(comando, [iduser, iduser]);
+        const [linhas] = await conx.query(comando);
         return linhas;
     } catch (error) {
         console.error('Erro ao executar consulta dos dados das salas:', error);
@@ -60,7 +57,6 @@ export async function dadosTrilhas(idsala, iduser) {
     tt.nm_nome AS nome, 
     tt.ds_descricao AS descricao, 
     tt.img_imagem AS imagem, 
-    tt.url_video AS video,
     tt.dt_criado AS criado
     FROM tb_trilhas tt
     INNER JOIN tb_trilhas_salas tts ON tt.id_trilha = tts.id_trilha
@@ -86,7 +82,6 @@ export async function dadosTrilha(idsala, idtrilha, iduser) {
     tt.nm_nome AS nome, 
     tt.ds_descricao AS descricao, 
     tt.img_imagem AS imagem, 
-    tt.url_video AS video,
     tt.dt_criado AS criado
     FROM tb_trilhas tt
     INNER JOIN tb_trilhas_salas tts ON tt.id_trilha = tts.id_trilha

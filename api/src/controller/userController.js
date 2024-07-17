@@ -5,14 +5,9 @@ import Joi from "Joi"
 import { dadosAtividade, dadosAtividades, dadosAviso, dadosAvisos, dadosLicoes, dadosPalavras, dadosSala, dadosSalas, dadosTransmissao, dadosTransmissoes, dadosTrilha, dadosTrilhas } from "../repository/userRepository.js";
 
 //dados SALAS
-server.get("/user/:iduser/dados/salas", async (req, resp)=> {
+server.get("/user/dados/salas", async (req, resp)=> {
     try {
-        const {iduser} = req.params;
-        const idschema = Joi.number().integer().positive().required()
-        const {error} = idschema.validate(iduser)
-        if (error) { return resp.status(400).send({ erro: 'O parâmetro "id" do usuário é obrigatório.'})}
-
-        const resposta = await dadosSalas(iduser)
+        const resposta = await dadosSalas()
         if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
         else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma sala foi retornada.'})}
         else { return resp.send(resposta)}
@@ -23,7 +18,7 @@ server.get("/user/:iduser/dados/salas", async (req, resp)=> {
     }
 })
 
-//dados SALA
+//dados SALA id
 server.get("/user/:iduser/dados/sala/:idsala", async (req, resp)=> {
     try {
         const {idsala, iduser} = req.params;
