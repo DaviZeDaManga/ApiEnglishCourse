@@ -171,7 +171,7 @@ export async function dadosAvisosProfessor(idprofessor) {
 export async function inserirAviso(idprofessor, dados) {
     const comando = `
     INSERT INTO tb_avisos (id_professor, nm_nome, ds_descricao, img_imagem, url_video, bt_comentarios, ds_status, dt_criado)
-    VALUES (?, ?, ?, ?, ?, ?, CURDATE())`
+    VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())`
 
     try {
         const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem, dados.video, dados.comentarios, dados.status])
@@ -211,7 +211,7 @@ export async function dadosTransmissoesProfessor(idprofessor) {
 export async function inserirTransmissao(idprofessor, dados) {
     const comando = `
     INSERT INTO tb_transmissoes (id_professor, nm_nome, ds_descricao, img_imagem, url_video, bt_comentarios, ds_status, dt_criado)
-    VALUES (?, ?, ?, ?, ?, ?, CURDATE())`
+    VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())`
 
     try {
         const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem, dados.video, dados.comentarios, dados.status])

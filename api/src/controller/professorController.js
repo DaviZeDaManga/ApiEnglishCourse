@@ -4,7 +4,7 @@ const server = Router();
 import Joi from "Joi";
 import multer from "multer"; 
 import bcrypt from "bcrypt"
-import { cadastroProfessor, dadosAtividadesProfessor, dadosAvisosProfessor, dadosTransmissoesProfessor, dadosTrilhasProfessor, inserirAtividade, inserirAviso, inserirSala, inserirTransmissao, inserirTrilha, loginProfessor, verificarLoginProfessor } from "../repository/professorRepository.js";
+import { cadastroProfessor, dadosAtividadesProfessor, dadosAvisosProfessor, dadosTransmissoesProfessor, dadosTrilhasProfessor, inserirAtividade, inserirAviso, inserirSala, inserirTransmissao, inserirTrilha, inserirTrilhaSala, loginProfessor, verificarLoginProfessor } from "../repository/professorRepository.js";
 
 const uploadPerfil = multer({
     dest: "uploads/images/alunos/professores"
@@ -197,9 +197,9 @@ server.post('/professor/:idprofessor/add/trilha', async (req, resp)=> {
             trilha: Joi.number().integer().positive().required()
         })
         const {error, value} = schema.validate(req.body)
-        if (error) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala e do professor é obrigatório.'})}
+        if (error) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala e da trilha é obrigatório.'})}
 
-        const resposta = await entrarSala(idprofessor, value);
+        const resposta = await inserirTrilhaSala(idprofessor, value);
         if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
         return resp.send(resposta);
     } 
@@ -254,7 +254,7 @@ server.post('/professor/:idprofessor/novo/aviso', uploadAviso.single('imagem'), 
         const dados = {...value, imagem: imagemPath};
         const resposta = await inserirAviso(idprofessor, dados);
         if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
-        return resp.send(resposta);
+        return resp.send(resposta.insertId);
     }
     catch(err) {
         console.error('Erro interno no servidor:', err);
@@ -307,7 +307,7 @@ server.post('/professor/:idprofessor/novo/transmissao', uploadTransmissao.single
         const dados = {...value, imagem: imagemPath};
         const resposta = await inserirTransmissao(idprofessor, dados);
         if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
-        return resp.send(resposta);
+        return resp.send(resposta.insertId);
     }
     catch(err) {
         console.error('Erro interno no servidor:', err);
@@ -360,7 +360,7 @@ server.post('/professor/:idprofessor/novo/atividade', uploadAtividade.single('im
         const dados = {...value, imagem: imagemPath};
         const resposta = await inserirAtividade(idprofessor, dados);
         if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
-        return resp.send(resposta);
+        return resp.send(resposta.insertId);
     }
     catch(err) {
         console.error('Erro interno no servidor:', err);
