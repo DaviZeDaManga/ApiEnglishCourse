@@ -81,11 +81,44 @@ export async function dadosAluno(idaluno) {
     }
 }
 
+//veridicar codigo da sala
+export async function verificarCodigoSala(codigo) {
+    const comando = `
+    SELECT 
+    id_sala AS sala,
+    id_professor AS professor
+    FROM tb_salas
+    WHERE ds_codigo = ?`
+
+    try {
+        const [resposta] = await conx.query(comando, [codigo]);
+        return resposta.length > 0 ? resposta[0] : null;
+    } catch (error) {
+        console.error('Erro ao verificar código da sala:', error);
+        throw error; 
+    }
+}
+
+//sair sala
+export async function sairSala(idaluno) {
+    const comando = `
+    DELETE FROM tb_salas_alunos 
+    where id_aluno = ?`
+
+    try {
+        const [resposta] = await conx.query(comando, [idaluno]);
+        return resposta;
+    } catch (error) {
+        console.error('Erro ao retirar aluno da sala:', error);
+        throw error; 
+    }
+}
+
 //entrar sala
 export async function entrarSala(idaluno, dados) {
     const comando = `
     INSERT INTO tb_salas_alunos (id_professor, id_sala, id_aluno, ds_status)
-    VALUES (?, ?, ?, "Análise")`
+    VALUES (?, ?, ?, "Ativo")`
 
     try {
         const [resposta] = await conx.query(comando, [dados.professor, dados.sala, idaluno]);

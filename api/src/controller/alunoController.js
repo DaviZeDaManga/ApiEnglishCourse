@@ -4,7 +4,7 @@ const server = Router()
 import Joi from "Joi"
 import multer from "multer";
 import bcrypt from "bcrypt"
-import { proximaAtividade, inserirResposta, inserirFeitoConteudo, inserirFeitoLicoes, dadosAluno, dadosMinhaSala, loginAluno, verificarLoginAluno, cadastroAluno, entrarSala } from "../repository/alunoRepository.js";
+import { proximaAtividade, inserirResposta, inserirFeitoConteudo, inserirFeitoLicoes, dadosAluno, dadosMinhaSala, loginAluno, verificarLoginAluno, cadastroAluno, entrarSala, verificarCodigoSala, sairSala } from "../repository/alunoRepository.js";
 
 const uploadPerfil = multer({
     dest: "uploads/images/alunos/perfil"
@@ -88,7 +88,7 @@ server.get("/aluno/:idaluno/dados", async (req, resp)=> {
 })
 
 //entrar sala
-server.post('/aluno/:idaluno/entar/sala', async (req, resp)=> {
+server.post('/aluno/:idaluno/entrar/sala', async (req, resp)=> {
     try {
         const {idaluno} = req.params;
         const idSchema = Joi.number().integer().positive()
@@ -96,13 +96,21 @@ server.post('/aluno/:idaluno/entar/sala', async (req, resp)=> {
         if (errorid) { return resp.status(400).send({ erro: 'O parâmetro "id" do aluno é obrigatório.'})}
 
         const schema = Joi.object({
-            sala: Joi.number().integer().positive().required(),
-            professor: Joi.number().integer().positive().required()
+            codigo: Joi.string().required().min(10).max(25)
         })
         const {error, value} = schema.validate(req.body)
-        if (error) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala e do professor é obrigatório.'})}
+        if (error) { return resp.status(400).send({ erro: 'O parâmetro "código" da sala é obrigatório.'})}
 
-        const resposta = await entrarSala(idaluno, value);
+        const value2 = await verificarCodigoSala(value.codigo)
+        if (!value2) { return resp.status(400).send({ erro: "Código inválido."})}
+
+        const value3 = await dadosMinhaSala(idaluno)
+        if (value3.length > 0) {
+            const value4 = await sairSala(idaluno)
+            if (!value4) { return resp.status(400).send({ erro: "Aluno não retirado da outra sala."})}
+        }
+
+        const resposta = await entrarSala(idaluno, value2);
         if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
         return resp.send(resposta);
     } 

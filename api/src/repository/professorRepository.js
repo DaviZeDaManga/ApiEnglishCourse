@@ -70,15 +70,25 @@ export async function dadosProfessor(idprofessor) {
 }
 
 
+//gerar random code
+function generateRandomCode(length) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
 
 //inserir sala
 export async function inserirSala(idprofessor, dados) {
     const comando = `
-    INSERT INTO tb_salas (id_professor, nm_nome, ds_descricao, img_imagem, dt_criado)
-    VALUES (?, ?, ?, ?, curdate());`
+    INSERT INTO tb_salas (id_professor, nm_nome, ds_descricao, img_imagem, ds_codigo, dt_criado)
+    VALUES (?, ?, ?, ?, ?, curdate());`
 
     try {
-        const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem])
+        const codigo = generateRandomCode(25)
+        const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem, codigo])
         return resposta
     }
     catch (error) {
