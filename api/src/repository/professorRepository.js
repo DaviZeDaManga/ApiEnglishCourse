@@ -4,8 +4,8 @@ import bcrypt from "bcrypt"
 //cadastro professor
 export async function cadastroProfessor(dados) {
     const comando = `
-        INSERT INTO tb_professores (nm_nome, ds_email, ds_senha, img_imagem, ds_numero, ds_tipo, dt_nascimento)
-        VALUES (?, ?, ?, ?, ?, ?, ?);`;
+        INSERT INTO tb_professores (nm_nome, ds_email, ds_senha, img_imagem, ds_numero, ds_tipo, ds_status, dt_nascimento)
+        VALUES (?, ?, ?, ?, ?, ?, "Ativo", ?);`;
 
     try {
         const hash = await bcrypt.hash(dados.senha, 10);
@@ -80,15 +80,38 @@ function generateRandomCode(length) {
     return result;
 }
 
+//dados salas professor
+export async function dadosSalasProfessor(idprofessor) {
+    const comando = `
+    SELECT 
+    ts.id_sala AS id,
+    ts.id_professor AS professor, 
+    ts.nm_nome AS nome, 
+    ts.ds_descricao AS descricao, 
+    ts.img_imagem AS imagem, 
+    ts.ds_status AS status,
+    ts.dt_criado AS criado
+    FROM tb_salas ts
+    WHERE ts.id_professor = ?`
+
+    try {
+        const [linhas] = await conx.query(comando, [idprofessor]);
+        return linhas;
+    } catch (error) {
+        console.error('Erro ao executar consulta dos dados das salas:', error);
+        throw error; 
+    }
+}
+
 //inserir sala
 export async function inserirSala(idprofessor, dados) {
     const comando = `
-    INSERT INTO tb_salas (id_professor, nm_nome, ds_descricao, img_imagem, ds_codigo, dt_criado)
-    VALUES (?, ?, ?, ?, ?, curdate());`
+    INSERT INTO tb_salas (id_professor, nm_nome, ds_descricao, img_imagem, ds_status, ds_codigo, dt_criado)
+    VALUES (?, ?, ?, ?, ?, ?, curdate());`
 
     try {
         const codigo = generateRandomCode(25)
-        const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem, codigo])
+        const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem, dados.status, codigo])
         return resposta
     }
     catch (error) {
@@ -124,11 +147,11 @@ export async function dadosTrilhasProfessor(idprofessor) {
 //insert trilha
 export async function inserirTrilha(idprofessor, dados) {
     const comando = `
-    INSERT INTO tb_trilhas (id_professor, nm_nome, ds_descricao, img_imagem, dt_criado)
-    VALUES (?, ?, ?, ?, CURDATE())`
+    INSERT INTO tb_trilhas (id_professor, nm_nome, ds_descricao, img_imagem, ds_status, dt_criado)
+    VALUES (?, ?, ?, ?, ?, CURDATE())`
 
     try {
-        const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem])
+        const [resposta] = await conx.query(comando, [idprofessor, dados.nome, dados.desc, dados.imagem, dados.status])
         return resposta
     }
     catch (error) {

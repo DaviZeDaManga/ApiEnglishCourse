@@ -4,7 +4,7 @@ const server = Router();
 import Joi from "Joi";
 import multer from "multer"; 
 import bcrypt from "bcrypt"
-import { cadastroProfessor, dadosAtividadesProfessor, dadosAvisosProfessor, dadosTransmissoesProfessor, dadosTrilhasProfessor, inserirAtividade, inserirAviso, inserirSala, inserirTransmissao, inserirTrilha, inserirTrilhaSala, loginProfessor, verificarLoginProfessor } from "../repository/professorRepository.js";
+import { cadastroProfessor, dadosAtividadesProfessor, dadosAvisosProfessor, dadosSalasProfessor, dadosTransmissoesProfessor, dadosTrilhasProfessor, inserirAtividade, inserirAviso, inserirSala, inserirTransmissao, inserirTrilha, inserirTrilhaSala, loginProfessor, verificarLoginProfessor } from "../repository/professorRepository.js";
 
 const uploadPerfil = multer({
     dest: "uploads/images/alunos/professores"
@@ -105,6 +105,25 @@ server.get("/professor/:idprofessor/dados", async (req, resp)=> {
 
 
 
+//dados salas professor
+server.get("/professor/:idprofessor/dados/salas", async (req, resp)=> {
+    try {
+        const {idprofessor} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error} = idschema.validate(idprofessor)
+        if (error) { return resp.status(400).send({ erro: 'O parâmetro "id" do usuário é obrigatório.'})}
+
+        const resposta = await dadosSalasProfessor(idprofessor)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma sala foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
 //inserir sala
 server.post('/professor/:idprofessor/novo/sala', uploadSala.single('imagem'), async (req, resp) => {
     try {
@@ -115,7 +134,8 @@ server.post('/professor/:idprofessor/novo/sala', uploadSala.single('imagem'), as
 
         const schema = Joi.object({
             nome: Joi.string().required(),
-            desc: Joi.string().required()
+            desc: Joi.string().required(),
+            status: Joi.string().valid("Ativo", "Em desenvolvimento", "Desativado").required()
         });
         const {error, value} = schema.validate(req.body);
         if (error) { return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details });}
@@ -165,7 +185,8 @@ server.post('/professor/:idprofessor/novo/trilha', uploadTrilha.single('imagem')
 
         const schema = Joi.object({
             nome: Joi.string().required(),
-            desc: Joi.string().required()
+            desc: Joi.string().required(),
+            status: Joi.string().valid("Ativo", "Em desenvolvimento", "Desativado").required()
         })
         const {error, value} = schema.validate(req.body);
         if (error) { return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details });}
@@ -243,13 +264,12 @@ server.post('/professor/:idprofessor/novo/aviso', uploadAviso.single('imagem'), 
             desc: Joi.string().required(),
             video: Joi.string().required(),
             comentarios: Joi.boolean().required(),
-            status: Joi.string().required()
+            status: Joi.string().valid("Ativo", "Desativado").required()
         })
         const {error, value} = schema.validate(req.body);
         if (error) { return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details });}
 
-        const imagemPath = req.file ? req.file.path : null;
-        if (!imagemPath) { return resp.status(400).send({ erro: 'Imagem é obrigatória.' });}
+        const imagemPath = req.file ? req.file.path : "Nenhuma imagem adicionada.";
 
         const dados = {...value, imagem: imagemPath};
         const resposta = await inserirAviso(idprofessor, dados);
@@ -296,7 +316,7 @@ server.post('/professor/:idprofessor/novo/transmissao', uploadTransmissao.single
             desc: Joi.string().required(),
             video: Joi.string().required(),
             comentarios: Joi.boolean().required(),
-            status: Joi.string().required()
+            status: Joi.string().valid("Ativo", "Em andamento", "Desativado").required()
         })
         const {error, value} = schema.validate(req.body);
         if (error) { return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details });}
@@ -349,7 +369,7 @@ server.post('/professor/:idprofessor/novo/atividade', uploadAtividade.single('im
             desc: Joi.string().required(),
             video: Joi.string().required(),
             comentarios: Joi.boolean().required(),
-            status: Joi.string().required()
+            status: Joi.string().valid("Ativo", "Em desenvolvimento", "Desativado").required()
         })
         const {error, value} = schema.validate(req.body);
         if (error) { return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details });}

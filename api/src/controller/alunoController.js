@@ -4,7 +4,7 @@ const server = Router()
 import Joi from "Joi"
 import multer from "multer";
 import bcrypt from "bcrypt"
-import { proximaAtividade, inserirResposta, inserirFeitoConteudo, inserirFeitoLicoes, dadosAluno, dadosMinhaSala, loginAluno, verificarLoginAluno, cadastroAluno, entrarSala, verificarCodigoSala, sairSala } from "../repository/alunoRepository.js";
+import { inserirResposta, inserirFeitoConteudo, dadosAluno, dadosMinhaSala, loginAluno, verificarLoginAluno, cadastroAluno, entrarSala, verificarCodigoSala, sairSala, dadosAtividadeAluno, dadosPalavrasAluno, dadosAtividadesAluno, dadosLicoesAluno, verificarFeitoAluno, verificarRespostaAluno, dadosTrilhasAluno, dadosTrilhaAluno, dadosAvisosAluno, dadosAvisoAluno, dadosTransmissoesAluno, dadosTransmissaoAluno } from "../repository/alunoRepository.js";
 
 const uploadPerfil = multer({
     dest: "uploads/images/alunos/perfil"
@@ -33,7 +33,7 @@ server.post("/aluno/cadastro", uploadPerfil.single("imagem"), async (req, resp)=
         const dados = {...value, imagem: imagemPath}
         const resposta = await cadastroAluno(dados)
         if (!resposta) { return resp.status(400).send({ erro: 'Cadastro não efetuado.'})}
-        else { return resp.send({ message: "Usuário adicionado!"})}
+        else { return resp.send({ message: "aluno adicionado!"})}
     }
     catch(err) {
         console.error('Erro interno no servidor:', err);
@@ -86,6 +86,8 @@ server.get("/aluno/:idaluno/dados", async (req, resp)=> {
         resp.status(500).send({ erro: 'Erro interno no servidor' });
     }
 })
+
+
 
 //entrar sala
 server.post('/aluno/:idaluno/entrar/sala', async (req, resp)=> {
@@ -141,24 +143,222 @@ server.get("/aluno/:idaluno/dados/minhasala", async (req, resp)=> {
 
 
 
-//proxima atividade
-server.post('/aluno/:idaluno/proxima/atividade/:idatividade', async (req, resp)=> {
+//dados TRILHAS
+server.get("/aluno/:idaluno/dados/sala/:idsala/trilhas", async (req, resp)=> {
     try {
-        const {idaluno, idatividade} = req.params;
-        const idSchema = Joi.number().integer().positive()
-        const {error: error1} = idSchema.validate(idaluno);
-        const {error: error2} = idSchema.validate(idatividade);
-        if (error1 || error2) { return resp.status(400).send({ erro: 'Os parâmetros "id" do aluno e da atividade é obrigatório.'})}
+        const {idsala, idaluno} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        if (error1 || error2) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala e do aluno é obrigatório.'})}
 
-        const resposta = await proximaAtividade(idaluno, idatividade);
-        if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
-        return resp.send(resposta);
-    } 
-    catch (err) {
-        console.error('Erro interno no servidor:', err);
-        resp.status(500).send({ erro: 'Erro interno no servidor', detalhes: err.message });
+        const resposta = await dadosTrilhasAluno(idsala, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma trilha foi retornada.'})}
+        else { return resp.send(resposta)}
     }
-});
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//dados TRILHA
+server.get("/aluno/:idaluno/dados/sala/:idsala/trilha/:idtrilha", async (req, resp)=> {
+    try {
+        const {idaluno, idsala, idtrilha} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        const {error: error3} = idschema.validate(idsala)
+        if (error1 || error2 || error3) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala, do aluno e da trilha é obrigatório.'})}
+
+        const resposta = await dadosTrilhaAluno(idsala, idtrilha, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma trilha foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//dados ATIVIDADES
+server.get("/aluno/:idaluno/dados/sala/:idsala/trilha/:idtrilha/atividades", async (req, resp)=> {
+    try {
+        const {idaluno, idsala, idtrilha} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        const {error: error3} = idschema.validate(idsala)
+        if (error1 || error2 || error3) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala, do aluno e da trilha é obrigatório.'})}
+
+        const resposta = await dadosAtividadesAluno(idsala, idtrilha, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma atividade foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//dados ATIVIDADE
+server.get("/aluno/:idaluno/dados/sala/:idsala/trilha/:idtrilha/atividade/:idatividade", async (req, resp)=> {
+    try {
+        const {idaluno, idsala, idtrilha, idatividade} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        const {error: error3} = idschema.validate(idsala)
+        const {error: error4} = idschema.validate(idatividade)
+        if (error1 || error2 || error3 || error4) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala, do aluno, da trilha e da atividade é obrigatório.'})}
+
+        const resposta = await dadosAtividadeAluno(idsala, idtrilha, idatividade, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma atividade foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//dados PALAVRAS
+server.get("/aluno/:idaluno/dados/sala/:idsala/trilha/:idtrilha/atividade/:idatividade/palavras", async (req, resp)=> {
+    try {
+        const {idaluno, idsala, idtrilha, idatividade} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        const {error: error3} = idschema.validate(idsala)
+        const {error: error4} = idschema.validate(idatividade)
+        if (error1 || error2 || error3 || error4) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala, do aluno, da trilha e da atividade é obrigatório.'})}
+
+        const resposta = await dadosPalavrasAluno(idsala, idtrilha, idatividade, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma palavra foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//dados LICOES
+server.get("/aluno/:idaluno/dados/sala/:idsala/trilha/:idtrilha/atividade/:idatividade/licoes", async (req, resp)=> {
+    try {
+        const {idaluno, idsala, idtrilha, idatividade} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        const {error: error3} = idschema.validate(idsala)
+        const {error: error4} = idschema.validate(idatividade)
+        if (error1 || error2 || error3 || error4) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala, do aluno, da trilha e da atividade é obrigatório.'})}
+
+        const resposta = await dadosLicoesAluno(idsala, idtrilha, idatividade, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma lição foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+
+
+
+//dados AVISOS
+server.get("/aluno/:idaluno/dados/sala/:idsala/avisos", async (req, resp)=> {
+    try {
+        const {idsala, idaluno} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        if (error1 || error2) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala e do aluno é obrigatório.'})}
+
+        const resposta = await dadosAvisosAluno(idsala, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhum aviso foi retornado.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//dados AVISO
+server.get("/aluno/:idaluno/dados/sala/:idsala/aviso/:idaviso", async (req, resp)=> {
+    try {
+        const {idaluno, idsala, idaviso} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        const {error: error3} = idschema.validate(idaviso)
+        if (error1 || error2 || error3) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala, do aluno e do aviso é obrigatório.'})}
+
+        const resposta = await dadosAvisoAluno(idsala, idaviso, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhum aviso foi retornado.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+
+
+//dados TRANSMISSOES
+server.get("/aluno/:idaluno/dados/sala/:idsala/transmissoes", async (req, resp)=> {
+    try {
+        const {idsala, idaluno} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        if (error1 || error2) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala e do aluno é obrigatório.'})}
+
+        const resposta = await dadosTransmissoesAluno(idsala, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma transmissão foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//dados TRANSMISSAO
+server.get("/aluno/:idaluno/dados/sala/:idsala/transmissao/:idtransmissao", async (req, resp)=> {
+    try {
+        const {idaluno, idsala, idtransmissao} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {error: error1} = idschema.validate(idsala)
+        const {error: error2} = idschema.validate(idaluno)
+        const {error: error3} = idschema.validate(idtransmissao)
+        if (error1 || error2 || error3) { return resp.status(400).send({ erro: 'O parâmetro "id" da sala, do aluno e da transmissão é obrigatório.'})}
+
+        const resposta = await dadosTransmissaoAluno(idsala, idtransmissao, idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhum transmissão foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+
 
 //inserir feito conteudo
 server.post('/aluno/:idaluno/feito/atividade/:idatividade/conteudo', async (req, resp)=> {
@@ -168,6 +368,9 @@ server.post('/aluno/:idaluno/feito/atividade/:idatividade/conteudo', async (req,
         const {error: error1} = idSchema.validate(idaluno);
         const {error: error2} = idSchema.validate(idatividade);
         if (error1 || error2) { return resp.status(400).send({ erro: 'Os parâmetros "id" do aluno e da atividade é obrigatório.'})}
+
+        const feito = await verificarFeitoAluno(idaluno, idatividade)
+        if (feito) {return resp.status(200).send({ erro: "Feito já inserido." });}
 
         const resposta = await inserirFeitoConteudo(idaluno, idatividade);
         if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
@@ -179,50 +382,36 @@ server.post('/aluno/:idaluno/feito/atividade/:idatividade/conteudo', async (req,
     }
 });
 
-//inserir feito licoes
-server.post('/aluno/:idaluno/feito/atividade/:idatividade/licoes', async (req, resp)=> {
-    try {
-        const {idaluno, idatividade} = req.params;
-        const idSchema = Joi.number().integer().positive()
-        const {error: error1} = idSchema.validate(idaluno);
-        const {error: error2} = idSchema.validate(idatividade);
-        if (error1 || error2) { return resp.status(400).send({ erro: 'Os parâmetros "id" do aluno e da atividade é obrigatório.'})}
-
-        const resposta = await inserirFeitoLicoes(idaluno, idatividade);
-        if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
-        return resp.send(resposta);
-    } 
-    catch (err) {
-        console.error('Erro interno no servidor:', err);
-        resp.status(500).send({ erro: 'Erro interno no servidor', detalhes: err.message });
-    }
-});
-
-//inserir resposta
-server.post('/aluno/:idaluno/responder/licao/:idlicao', async (req, resp)=> {
+server.post('/aluno/:idaluno/responder/licao/:idlicao', async (req, resp) => {
     try {
         const {idaluno, idlicao} = req.params;
-        const idSchema = Joi.number().integer().positive()
+        const idSchema = Joi.number().integer().positive();
         const {error: error1} = idSchema.validate(idaluno);
         const {error: error2} = idSchema.validate(idlicao);
-        if (error1 || error2) { return resp.status(400).send({ erro: 'Os parâmetros "id" do aluno e da atividade é obrigatório.'})}
+        if (error1 || error2) { return resp.status(400).send({ erro: 'Os parâmetros "id" do aluno e da atividade são obrigatórios.' });}
+
+        const respostaAluno = await verificarRespostaAluno(idaluno, idlicao);
+        if (respostaAluno) {return resp.status(200).send({ erro: "Resposta já inserida." });}
 
         const schema = Joi.object({
-            idalternativa: Joi.number().integer().positive(),
-            escrita: Joi.string().required(),
-            nota: Joi.number().required()
+            resposta: Joi.string().required(),
+            tipo: Joi.string().valid("Alternativa", "Dissertativa").required(),
+            status: Joi.string().valid("Respondida", "Em análise").required()
         });
-        const { error, value } = schema.validate(req.body);
-        if (error) { return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details }); }
+
+        const {error, value} = schema.validate(req.body);
+        if (error) {return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details });}
 
         const resposta = await inserirResposta(idaluno, idlicao, value);
-        if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
+        if (resposta.affectedRows === 0) {return resp.status(400).send({ erro: 'Nada foi adicionado.' });}
+
         return resp.send(resposta);
-    } 
-    catch (err) {
+    } catch (err) {
         console.error('Erro interno no servidor:', err);
         resp.status(500).send({ erro: 'Erro interno no servidor', detalhes: err.message });
     }
 });
+
+
 
 export default server;
