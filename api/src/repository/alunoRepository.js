@@ -47,6 +47,7 @@ export async function dadosAluno(idaluno) {
     ta.img_imagem AS imagem,
     ta.ds_numero AS numero,
     ta.ds_tipo AS tipo,
+    ta.ds_status AS status,
     ta.dt_nascimento AS nascimento,
     ts.id_sala AS idSala
     FROM tb_alunos ta
@@ -63,17 +64,78 @@ export async function dadosAluno(idaluno) {
     }
 }
 
-
-
-
-//entrar sala
-export async function entrarSala(idaluno, dados) {
+//alterar dados aluno
+export async function alterarDadosAluno(idaluno, dados) {
     const comando = `
-    INSERT INTO tb_salas_alunos (id_professor, id_sala, id_aluno, ds_status)
-    VALUES (?, ?, ?, "Ativo")`
+    UPDATE tb_alunos
+    SET
+    nm_nome = ?, 
+    ds_email = ?, 
+    ds_numero = ?, 
+    dt_nascimento = ?
+    WHERE id_aluno = ?`
 
     try {
-        const [resposta] = await conx.query(comando, [dados.professor, dados.sala, idaluno]);
+        const [linhas] = await conx.query(comando, [dados.nome, dados.email, dados.numero, dados.nascimento, idaluno]);
+        return linhas;
+    } catch (error) {
+        console.error('Erro ao executar consulta dos dados do aluno:', error);
+        throw error; 
+    }
+}
+
+
+
+//dados SALAS
+export async function dadosSalasAluno(idaluno) {
+    const comando = `
+    SELECT 
+        ts.id_sala AS id,
+        ts.id_professor AS professor, 
+        ts.nm_nome AS nome, 
+        ts.ds_descricao AS descricao, 
+        ts.img_imagem AS imagem, 
+        ts.ds_status AS status,
+        ts.dt_criado AS criado,
+        (SELECT tsa.ds_status 
+        FROM tb_salas_alunos tsa 
+        WHERE tsa.id_sala = ts.id_sala 
+        AND tsa.id_aluno = ?) AS statusAluno
+    FROM tb_salas ts
+    WHERE ts.ds_status = "Ativo";`
+
+    try {
+        const [linhas] = await conx.query(comando, [idaluno]);
+        return linhas;
+    } catch (error) {
+        console.error('Erro ao executar consulta dos dados das salas:', error);
+        throw error; 
+    }
+}
+
+//solicitar para entrar sala
+export async function solicitarEntrarSala(idaluno, idsala) {
+    const comando = `
+    INSERT INTO tb_salas_alunos (id_sala, id_aluno, ds_status)
+    VALUES (?, ?, "Solicitado")`
+
+    try {
+        const [resposta] = await conx.query(comando, [idsala, idaluno]);
+        return resposta;
+    } catch (error) {
+        console.error('Erro ao inserir aluno na sala:', error);
+        throw error; 
+    }
+}
+
+//entrar sala
+export async function entrarSala(idaluno, idsala) {
+    const comando = `
+    INSERT INTO tb_salas_alunos (id_sala, id_aluno, ds_status)
+    VALUES (?, ?, "Ativo")`
+
+    try {
+        const [resposta] = await conx.query(comando, [idsala, idaluno]);
         return resposta;
     } catch (error) {
         console.error('Erro ao inserir aluno na sala:', error);
@@ -97,7 +159,7 @@ export async function sairSala(idaluno) {
 }
 
 //dados minha sala
-export async function dadosMinhaSala(idaluno) {
+export async function dadosMinhaSalaAluno(idaluno) {
     const comando = `
     SELECT 
     ts.id_sala AS id,
@@ -112,7 +174,8 @@ export async function dadosMinhaSala(idaluno) {
     FROM tb_salas ts
     INNER JOIN tb_salas_alunos tsa ON ts.id_sala = tsa.id_sala
     INNER JOIN tb_professores tp ON ts.id_professor = tp.id_professor
-    WHERE tsa.id_aluno = ?`
+    WHERE tsa.id_aluno = ?
+    AND tsa.ds_status = "Ativo"`
 
     const comando2 = `
     select 
@@ -121,7 +184,8 @@ export async function dadosMinhaSala(idaluno) {
     ds_tipo AS tipo
     FROM tb_salas_alunos tsa
     inner join tb_alunos ta ON ta.id_aluno = tsa.id_aluno
-    where tsa.id_sala = ?`
+    where tsa.id_sala = ?
+    and tsa.ds_status = "Ativo"`
 
     try {
         const resposta = []
@@ -620,8 +684,7 @@ export async function verificarLoginAluno(email) {
 export async function verificarCodigoSala(codigo) {
     const comando = `
     SELECT 
-    id_sala AS sala,
-    id_professor AS professor
+    id_sala AS sala
     FROM tb_salas
     WHERE ds_codigo = ?`
 

@@ -4,7 +4,7 @@ const server = Router()
 import Joi from "Joi"
 import multer from "multer";
 import bcrypt from "bcrypt"
-import { inserirResposta, inserirFeitoConteudo, dadosAluno, dadosMinhaSala, loginAluno, verificarLoginAluno, cadastroAluno, entrarSala, verificarCodigoSala, sairSala, dadosAtividadeAluno, dadosPalavrasAluno, dadosAtividadesAluno, dadosLicoesAluno, verificarFeitoAluno, verificarRespostaAluno, dadosTrilhasAluno, dadosTrilhaAluno, dadosAvisosAluno, dadosAvisoAluno, dadosTransmissoesAluno, dadosTransmissaoAluno } from "../repository/alunoRepository.js";
+import { inserirResposta, inserirFeitoConteudo, dadosAluno, loginAluno, verificarLoginAluno, cadastroAluno, entrarSala, verificarCodigoSala, sairSala, dadosAtividadeAluno, dadosPalavrasAluno, dadosAtividadesAluno, dadosLicoesAluno, verificarFeitoAluno, verificarRespostaAluno, dadosTrilhasAluno, dadosTrilhaAluno, dadosAvisosAluno, dadosAvisoAluno, dadosTransmissoesAluno, dadosTransmissaoAluno, alterarDadosAluno, solicitarEntrarSala, dadosMinhaSalaAluno, dadosSalasAluno } from "../repository/alunoRepository.js";
 
 const uploadPerfil = multer({
     dest: "uploads/images/alunos/perfil"
@@ -87,7 +87,75 @@ server.get("/aluno/:idaluno/dados", async (req, resp)=> {
     }
 })
 
+//alterar dados aluno
+server.put("/aluno/:idaluno/alterar", async (req, resp)=> {
+    try {
+        const {idaluno} = req.params;
+        const idschema = Joi.number().integer().positive().required()
+        const {iderror} = idschema.validate(idaluno)
+        if (iderror) { return resp.status(400).send({ erro: 'O parâmetro "id" do aluno é obrigatório.'})}
 
+        const schema = Joi.object({
+            nome: Joi.string().required().min(3).max(30),
+            email: Joi.string().email().required(),
+            numero: Joi.string().required().min(8).max(15),
+            nascimento: Joi.string().required()
+        })
+        const {error, value} = schema.validate(req.body)
+        if (error) { return resp.status(400).send({ erro: 'Os parâmetros da resposta estão incorretos.', detalhes: error.details });}
+
+        const resposta = await alterarDadosAluno(idaluno, value)
+        if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
+        return resp.send(resposta);
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+
+
+//dados SALAS
+server.get("/aluno/:idaluno/dados/salas", async (req, resp)=> {
+    try {
+        const {idaluno} = req.params;
+        const idSchema = Joi.number().integer().positive()
+        const {error: errorid} = idSchema.validate(idaluno);
+        if (errorid) { return resp.status(400).send({ erro: 'O parâmetro "id" do aluno é obrigatório.'})}
+
+        const resposta = await dadosSalasAluno(idaluno)
+        if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
+        else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma sala foi retornada.'})}
+        else { return resp.send(resposta)}
+    }
+    catch(err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor' });
+    }
+})
+
+//pedir entrar sala
+server.post('/aluno/:idaluno/solicitar/entrar/sala/:idsala', async (req, resp)=> {
+    try {
+        const {idaluno, idsala} = req.params;
+        const idSchema = Joi.number().integer().positive()
+        const {error: errorid} = idSchema.validate(idaluno);
+        const {error: errorid2} = idSchema.validate(idaluno);
+        if (errorid || errorid2) { return resp.status(400).send({ erro: 'O parâmetro "id" do aluno e da sala é obrigatório.'})}
+
+        const value4 = await sairSala(idaluno)
+        if (!value4) { return resp.status(400).send({ erro: "Aluno não retirado da outra sala."})}
+
+        const resposta = await solicitarEntrarSala(idaluno, idsala);
+        if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
+        return resp.send(resposta);
+    } 
+    catch (err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor', detalhes: err.message });
+    }
+});
 
 //entrar sala
 server.post('/aluno/:idaluno/entrar/sala', async (req, resp)=> {
@@ -106,13 +174,10 @@ server.post('/aluno/:idaluno/entrar/sala', async (req, resp)=> {
         const value2 = await verificarCodigoSala(value.codigo)
         if (!value2) { return resp.status(400).send({ erro: "Código inválido."})}
 
-        const value3 = await dadosMinhaSala(idaluno)
-        if (value3.length > 0) {
-            const value4 = await sairSala(idaluno)
-            if (!value4) { return resp.status(400).send({ erro: "Aluno não retirado da outra sala."})}
-        }
+        const value4 = await sairSala(idaluno)
+        if (!value4) { return resp.status(400).send({ erro: "Aluno não retirado da outra sala."})}
 
-        const resposta = await entrarSala(idaluno, value2);
+        const resposta = await entrarSala(idaluno, value2.sala);
         if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi adicionado.' }); }
         return resp.send(resposta);
     } 
@@ -130,7 +195,7 @@ server.get("/aluno/:idaluno/dados/minhasala", async (req, resp)=> {
         const {error} = idschema.validate(idaluno)
         if (error) { return resp.status(400).send({ erro: 'O parâmetro "id" do aluno é obrigatório.'})}
 
-        const resposta = await dadosMinhaSala(idaluno)
+        const resposta = await dadosMinhaSalaAluno(idaluno)
         if (!resposta) { return resp.status(400).send({ erro: 'Nada foi retornado.'})}
         else if (resposta.length == 0) { return resp.status(400).send({ erro: 'Nenhuma sala foi retornada.'})}
         else { return resp.send(resposta)}
