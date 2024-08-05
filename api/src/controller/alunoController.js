@@ -187,6 +187,24 @@ server.post('/aluno/:idaluno/entrar/sala', async (req, resp)=> {
     }
 });
 
+//sair sala
+server.delete('/aluno/:idaluno/sair/sala', async (req, resp)=> {
+    try {
+        const {idaluno} = req.params;
+        const idSchema = Joi.number().integer().positive()
+        const {error: errorid} = idSchema.validate(idaluno);
+        if (errorid) { return resp.status(400).send({ erro: 'O parâmetro "id" do aluno é obrigatório.'})}
+
+        const resposta = await sairSala(idaluno);
+        if (resposta.affectedRows === 0) { return resp.status(400).send({ erro: 'Nada foi deletado.' }); }
+        return resp.send(resposta);
+    } 
+    catch (err) {
+        console.error('Erro interno no servidor:', err);
+        resp.status(500).send({ erro: 'Erro interno no servidor', detalhes: err.message });
+    }
+});
+
 //minhasala
 server.get("/aluno/:idaluno/dados/minhasala", async (req, resp)=> {
     try {
