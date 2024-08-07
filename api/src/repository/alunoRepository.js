@@ -90,18 +90,21 @@ export async function alterarDadosAluno(idaluno, dados) {
 export async function dadosSalasAluno(idaluno) {
     const comando = `
     SELECT 
-        ts.id_sala AS id,
-        ts.id_professor AS professor, 
-        ts.nm_nome AS nome, 
-        ts.ds_descricao AS descricao, 
-        ts.img_imagem AS imagem, 
-        ts.ds_status AS status,
-        ts.dt_criado AS criado,
-        (SELECT tsa.ds_status 
-        FROM tb_salas_alunos tsa 
-        WHERE tsa.id_sala = ts.id_sala 
-        AND tsa.id_aluno = ?) AS statusAluno
+    ts.id_sala AS id,
+    tp.nm_nome AS nomeProfessor, 
+    tp.ds_email AS emailProfessor, 
+    tp.img_imagem AS imagemProfessor,
+    ts.nm_nome AS nome, 
+    ts.ds_descricao AS descricao, 
+    ts.img_imagem AS imagem, 
+    ts.ds_status AS status,
+    ts.dt_criado AS criado,
+    (SELECT tsa.ds_status 
+    FROM tb_salas_alunos tsa 
+    WHERE tsa.id_sala = ts.id_sala 
+    AND tsa.id_aluno = ?) AS statusAluno
     FROM tb_salas ts
+    INNER JOIN tb_professores tp ON ts.id_professor = tp.id_professor
     WHERE ts.ds_status = "Ativo";`
 
     try {
